@@ -27,6 +27,26 @@ class ResidualBlock(nn.Module):
     return torch.cat([x, x_hat], 1)
 
 
+class FlattenAndLinearBlock(nn.Module):
+  def __init__(self, dim_in, dim_out):
+    super(FlattenAndLinearBlock, self).__init__()
+    self.fc1 = nn.Linear(dim_in, dim_in)
+    self.fc2 = nn.Linear(dim_in, dim_out)
+    self.act = nn.Sigmoid()
+
+  
+  def forward(self, x):
+    x_hat = torch.flatten(x)
+    x_hat = self.fc1(x_hat)
+    x_hat = self.fc2(x_hat)
+    y = self.act(x_hat)
+
+    return y
+
+
 def create_1d_residual(dim_in, kernel_size, stride=1):
-  print('hi')
   return ResidualBlock(dim_in, kernel_size, stride)
+
+
+def create_flatten_and_linear(dim_in, dim_out):
+  return FlattenAndLinearBlock(dim_in, dim_out)
