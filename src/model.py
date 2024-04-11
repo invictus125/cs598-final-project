@@ -91,15 +91,15 @@ class WaveformResNet(nn.Module):
 class IntraoperativeHypotensionModel(nn.Module):
   def __init__(
     self,
-    ecgResNet,
-    abpResNet,
-    eegResNet
+    ecg_resnet,
+    abp_resnet,
+    eeg_resnet
   ):
     super(IntraoperativeHypotensionModel, self).__init__()
 
-    self.ecg = ecgResNet
-    self.abp = abpResNet
-    self.eeg = eegResNet
+    self.ecg = ecg_resnet
+    self.abp = abp_resnet
+    self.eeg = eeg_resnet
 
     self.fc_input_length = 0
 
