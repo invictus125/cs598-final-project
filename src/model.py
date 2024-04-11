@@ -84,7 +84,7 @@ class WaveformResNet(nn.Module):
     return self.fl_ln(x_hat)
 
   
-  def output_size(self):
+  def get_output_size(self):
     return self.output_size
 
 
@@ -104,13 +104,13 @@ class IntraoperativeHypotensionModel(nn.Module):
     self.fc_input_length = 0
 
     if self.ecg is not None:
-      self.fc_input_length += self.ecg.output_size()
+      self.fc_input_length += self.ecg.get_output_size()
 
     if self.abp is not None:
-      self.fc_input_length += self.abp.output_size()
+      self.fc_input_length += self.abp.get_output_size()
 
     if self.eeg is not None:
-      self.fc_input_length += self.eeg.output_size()
+      self.fc_input_length += self.eeg.get_output_size()
 
     if self.fc_input_length == 0:
       raise 'No resnet blocks provided, unable to build model'
