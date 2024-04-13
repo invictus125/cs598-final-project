@@ -126,7 +126,7 @@ class IntraoperativeHypotensionModel(nn.Module):
     )
 
   
-  def forward(self, ecg, abp, eeg):
+  def forward(self, abp, ecg, eeg):
     ecg_o = torch.Tensor([])
     abp_o = torch.Tensor([])
     eeg_o = torch.Tensor([])
