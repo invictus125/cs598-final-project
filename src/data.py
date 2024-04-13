@@ -15,8 +15,8 @@ ECG_TRACKS = frozenset([
 ])
 
 ABP_TRACKS = frozenset([
-    'EV1000/ART_MBP',
-    'Solar8000/ART_MBP',
+    'SNUADC/ART',
+    'CardioQ/ABP',
 ])
 
 RELEVANT_TRACKS = EEG_TRACKS.union(ECG_TRACKS).union(ABP_TRACKS)
@@ -72,3 +72,9 @@ unique_operations = set(map(lambda key: candidate_cases_by_id[key]['optype'], qu
 print(unique_operations)
 
 print(len(qualified_case_ids))
+
+
+
+# ECG waveforms were pre-processed with a 1–40-Hz band-pass filter and normalized using Z-score.
+# EEG waveforms were pre-processed using a 0.5–50-Hz band-pass filter.
+# ABP waveforms were used without pre-processing.
