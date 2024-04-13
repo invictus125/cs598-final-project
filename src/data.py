@@ -4,7 +4,6 @@ from io import StringIO
 from pathlib import Path
 import requests
 
-
 EEG_TRACKS = frozenset([
     'BIS/EEG1_WAV',
     'BIS/EEG2_WAV',
@@ -26,6 +25,13 @@ def url_to_reader(url_string):
     response = requests.get(url_string)
     file = StringIO(response.text)
     return csv.DictReader(file, delimiter=',')
+
+def download_from_url(url_string, filepath):
+    with requests.get(url_string, stream=True) as response:
+        response.raise_for_status()
+        with open(filepath, 'wb') as file:
+            for chunk in response.iter_content(chunk_size=8192): 
+                file.write(chunk)
 
 def get_unique_vals(key, iterable):
     return set(map(lambda item: item[key], iterable))
@@ -51,6 +57,7 @@ def track_filter(case_id, case_dict):
 
 def is_valid_abp(abp_data):
     # Events and non-event cases extracted from noisy ABP waveforms with jSQI 0.8 or less, were excluded.
+    # ABP waveforms were used without pre-processing.
     # TODO: do some filtering based on SQI here
     return True
 
@@ -66,7 +73,7 @@ def preprocess_eeg_data(eeg_data):
     processed_data = eeg_data
     return processed_data
 
-def download_data(path):
+def download_data(path, max_num_candidate_cases=None):
     candidate_cases_by_id = {}
 
     for case in url_to_reader('https://api.vitaldb.net/cases'):
@@ -86,57 +93,43 @@ def download_data(path):
 
     candidate_case_ids = [case_id for case_id in filter(case_track_filter, candidate_cases_by_id.keys())]
 
-    qualified_case_ids =[]
+    # verify no heart surgery in remaining cases
+    unique_operations = set(map(lambda key: candidate_cases_by_id[key]['optype'], candidate_case_ids))
+    print(unique_operations)
 
+    candidate_cases_downloaded = 0
     for case_id in candidate_case_ids:
-        print('Processing case: '+case_id)
+        print('Processing caseid: '+case_id)
         case = candidate_cases_by_id[case_id]
-        has_qualifying_abp_data = False
-        case_tracks = {}
+        
         for case_track in case['tracks']:
             case_track_name = case_track['tname']
             case_track_id = case_track['tid']
-            print('Examining data for track: ', case_track_name, ' with id: ', case_track_id)
-            track_reader = url_to_reader('https://api.vitaldb.net/' + case_track_id)
-            track_data = []
-            for track_row in track_reader:
-                track_data.append(track_row)
-
-            print('Data for track loaded successfully')
-
+            
             if case_track_name in ABP_TRACKS:
                 track_type = 'ABP'
-                # ABP waveforms were used without pre-processing.
-                if not has_qualifying_abp_data:
-                    if is_valid_abp(track_data):
-                        has_qualifying_abp_data = True
-
             elif case_track_name in ECG_TRACKS:
                 track_type = 'ECG'
-                track_data = preprocess_ecg_data(track_data)
             else:
                 track_type = 'EEG'
-                track_data = preprocess_eeg_data(track_data)
 
-            case_tracks[f"{track_type}/{case_track_name.replace('/', '-')}-{case_track_id}.csv"] = track_data
+            print('Getting data for track: ', case_track_name, 'with id:', case_track_id)
 
-        if(has_qualifying_abp_data):
-            qualified_case_ids.append(case_id)
-            for key in case_tracks.keys():
-                track_data = case_tracks[key]
-                headers = track_data[0].keys()
-                filepath = path+f"/{case_id}/{key}"
-                Path(filepath[:filepath.rfind('/')]).mkdir(parents=True, exist_ok=True)
-                with open(filepath, 'w') as track_file:
-                    writer = csv.DictWriter(track_file, fieldnames=headers)
-                    for td in track_data:
-                        writer.writerow(td)
+            destination_path = path+f"/candidate_cases/{case_id}/{track_type}/{case_track_name.replace('/', '-')}-{case_track_id}.csv"
+            Path(destination_path[:destination_path.rfind('/')]).mkdir(parents=True, exist_ok=True)
 
-    # verify no heart surgery in remaining cases
-    unique_operations = set(map(lambda key: candidate_cases_by_id[key]['optype'], qualified_case_ids))
-    print(unique_operations)
+            download_from_url(
+                'https://api.vitaldb.net/' + case_track_id,
+                destination_path,
+            )
+            print('Data for track downloaded successfully')
+        
+        candidate_cases_downloaded = candidate_cases_downloaded + 1
 
-    print(len(qualified_case_ids))
+        if max_num_candidate_cases is not None:
+            if candidate_cases_downloaded == max_num_candidate_cases:
+                print('Requested number of cases reached.  ')
+                break
 
     # Waveform data track
     # The time column has three values: start time (0), time interval (s), and end time (s).
