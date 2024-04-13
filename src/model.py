@@ -2,7 +2,15 @@ import torch
 from torch import nn
 
 
-# TODO: encoder layer
+class EncoderBlock(nn.Module):
+  def __init__(self, dim_in, kernel_size=15, stride=1):
+    super(EncoderBlock, self).__init__()
+    self.conv = nn.Conv1d(dim_in, dim_in, kernel_size, stride)
+    self.fc = nn.Linear(dim_in, dim_in)
+
+
+  def forward(self, x):
+    return self.fc(self.conv(x))
 
 
 class ResidualBlock(nn.Module):
@@ -64,8 +72,8 @@ class WaveformResNet(nn.Module):
     stride=1
   ):
     super(WaveformResNet, self).__init__()
-    self.encoder = None # TODO
-    self.res_in_dim = 1 # TODO - this should be the encoder's out dimension
+    self.encoder = EncoderBlock(input_shape, 15, 1)
+    self.res_in_dim = input_shape
     self.output_size = output_size
 
     self.residuals = []
