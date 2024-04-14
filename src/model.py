@@ -5,12 +5,13 @@ from torch import nn
 class EncoderBlock(nn.Module):
   def __init__(self, dim_in, kernel_size=15, stride=1):
     super(EncoderBlock, self).__init__()
-    self.conv = nn.Conv1d(dim_in, dim_in, kernel_size, stride)
+    self.conv = nn.Conv1d(1, 1, kernel_size, stride)
     self.fc = nn.Linear(dim_in, dim_in)
 
 
   def forward(self, x):
-    return self.fc(self.conv(x))
+    x_hat = torch.flatten(self.conv(x))
+    return self.fc(x_hat)
 
 
 class ResidualBlock(nn.Module):
