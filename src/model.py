@@ -5,7 +5,7 @@ from torch import nn
 class EncoderBlock(nn.Module):
   def __init__(self, dim_in, kernel_size=15, stride=1):
     super(EncoderBlock, self).__init__()
-    self.conv = nn.Conv1d(1, 1, kernel_size, stride)
+    self.conv = nn.Conv1d(1, 1, kernel_size, stride, padding=7)
     self.fc = nn.Linear(dim_in, dim_in)
 
 
@@ -250,7 +250,7 @@ class WaveformResNet(nn.Module):
 
   
   def forward(self, x):
-    x_hat = self.encoder(x)
+    x_hat = self.encoder(x).unsqueeze(0)
 
     for i in range(len(self.residuals)):
       x_hat = self.residuals[i](x_hat)
